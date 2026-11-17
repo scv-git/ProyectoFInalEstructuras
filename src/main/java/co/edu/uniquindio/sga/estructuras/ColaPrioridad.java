@@ -45,10 +45,8 @@ public class ColaPrioridad<T> implements Iterable<T> {
     }
 
     @JsonValue
-    public List<T> comoLista() {
-        List<T> resultado = new ArrayList<>(elementos.tamanio());
-        for (T dato : this) resultado.add(dato);
-        return resultado;
+    public Object[] comoArreglo() {
+        return elementos.comoArreglo();
     }
 
     /** Recorre en orden de prioridad. */

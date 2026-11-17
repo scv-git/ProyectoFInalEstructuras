@@ -170,9 +170,10 @@ public class ListaDoble<T> implements Iterable<T> {
 
     /** Vista de solo lectura para serializar la estructura como una lista JSON. */
     @JsonValue
-    public List<T> comoLista() {
-        List<T> resultado = new ArrayList<>(tamanio);
-        for (T dato : this) resultado.add(dato);
+    public Object[] comoArreglo() {
+        Object[] resultado = new Object[tamanio];
+        int i = 0;
+        for (T dato : this) resultado[i++] = dato;
         return resultado;
     }
 
