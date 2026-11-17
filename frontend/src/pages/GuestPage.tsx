@@ -23,10 +23,10 @@ export function GuestPage({ user }: { user: SessionUser }) {
   const [availability, setAvailability] = useState<Apartment[]>([])
   const [selectedApartment, setSelectedApartment] = useState('')
   const [quote, setQuote] = useState<Quote>()
-  const [error, setError] = useState('')
+  const [error, setError] = useState(''); const [message, setMessage] = useState('')
   const [booking, setBooking] = useState({ entrada: todayPlus(0), salida: todayPlus(2), personas: 2 })
 
-  async function refresh() {
+  async function refresh(notify = false) {
     try {
       const [current, past, saved, profile] = await Promise.all([
         getGuestReservations(user.documento),
@@ -39,6 +39,7 @@ export function GuestPage({ user }: { user: SessionUser }) {
       setFavorites(saved)
       setGuest(profile)
       setError('')
+      if (notify) setMessage('Información actualizada')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'No se pudo cargar tu información')
     }
@@ -112,10 +113,10 @@ export function GuestPage({ user }: { user: SessionUser }) {
           <h1>Hola, {user.nombre.split(' ')[0]}.</h1>
           <p>Tus estancias y lugares guardados, en un mismo sitio.</p>
         </div>
-        <button className="button button--ghost" onClick={() => void refresh()}><RefreshCw size={16} /> Actualizar</button>
+        <button className="button button--ghost" onClick={() => void refresh(true)}><RefreshCw size={16} /> Actualizar</button>
       </div>
 
-      {error && <div className="notice">{error}</div>}
+      {(error || message) && <div className={`notice ${error ? 'notice--warning' : ''}`}>{error || message}</div>}
 
       <div className="guest-stats">
         <div className="metric-card"><CalendarDays size={19} /><strong>{reservations.length}</strong><small>reservas activas</small></div>

@@ -12,15 +12,16 @@ export function OverviewPage({ onNavigate, role }: { onNavigate: (view: ViewKey)
   const [map, setMap] = useState<MapData>()
   const [loading, setLoading] = useState(true)
   const [loadingScenario, setLoadingScenario] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(''); const [message, setMessage] = useState('')
   const isGuest = role === 'HUESPED'
 
-  async function loadData() {
+  async function loadData(notify = false) {
     setLoading(true); setError('')
     try {
       const [apartmentsData, mapData] = await Promise.all([getApartments(), isGuest ? Promise.resolve(undefined) : getMap()])
       setApartments(apartmentsData)
       setMap(mapData)
+      if (notify) setMessage('Datos actualizados')
     }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'No se pudo conectar con la API.') }
     finally { setLoading(false) }
@@ -46,8 +47,10 @@ export function OverviewPage({ onNavigate, role }: { onNavigate: (view: ViewKey)
   const eyebrow = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(1)
 
   return <>
-    <section className="page-intro"><div><span className="eyebrow">{eyebrow}</span><h1>{isGuest ? <>Tu próxima <em>estancia.</em></> : <>El edificio, <em>en movimiento.</em></>}</h1><p>{isGuest ? 'Apartamentos listos para recibirte en Aparta-Suites UQ.' : 'Una vista clara de lo que está pasando en Aparta-Suites UQ.'}</p></div><div className="page-intro__actions"><button className="button button--ghost" onClick={() => void loadData()}><RefreshCw size={16} /> Actualizar</button>{!isGuest && <button className="button button--primary button--compact" onClick={() => void handleLoadScenario()} disabled={loadingScenario}>{loadingScenario ? <LoaderCircle className="spin" size={16} /> : <Database size={16} />} {loadingScenario ? 'Cargando...' : 'Cargar escenario'}</button>}</div></section>
+    <section className="page-intro"><div><span className="eyebrow">{eyebrow}</span><h1>{isGuest ? <>Tu próxima <em>estancia.</em></> : <>El edificio, <em>en movimiento.</em></>}</h1><p>{isGuest ? 'Apartamentos listos para recibirte en Aparta-Suites UQ.' : 'Una vista clara de lo que está pasando en Aparta-Suites UQ.'}</p></div><div className="page-intro__actions">          <button className="button button--ghost" onClick={() => void loadData(true)}><RefreshCw size={16} /> Actualizar</button>{!isGuest && <button className="button button--primary button--compact" onClick={() => void handleLoadScenario()} disabled={loadingScenario}>{loadingScenario ? <LoaderCircle className="spin" size={16} /> : <Database size={16} />} {loadingScenario ? 'Cargando...' : 'Cargar escenario'}</button>}</div></section>
     {error && <div className="notice notice--warning"><TriangleAlert size={18} /><div><strong>No hay datos cargados</strong><span>{error} Verifica que Spring Boot esté ejecutándose en el puerto 8080 y carga el escenario inicial.</span></div></div>}
+    {message && <div className="notice">{message}</div>}
+    {message && <div className="notice">{message}</div>}
     <section className="metric-row metric-row--guest">
       <div className="metric-card metric-card--dark"><div className="metric-icon"><Building2 size={19} /></div><span>Total de apartamentos</span><strong>{loading ? '—' : apartments.length || 0}</strong><small>en el inventario</small></div>
       <div className="metric-card"><div className="metric-card__label"><span className="signal signal--green" /> Listos para recibir</div><strong>{counts.PREPARADO ?? 0}</strong><small>apartamentos preparados</small></div>

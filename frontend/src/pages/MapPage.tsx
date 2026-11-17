@@ -12,9 +12,9 @@ export function MapPage() {
   const [unreachable, setUnreachable] = useState<string[]>([])
   const [blocks, setBlocks] = useState<BlockGroup[]>([])
   const [traversal, setTraversal] = useState<{ type: 'bfs' | 'dfs'; nodes: string[] }>()
-  const [error, setError] = useState('')
+  const [error, setError] = useState(''); const [message, setMessage] = useState('')
 
-  async function refresh() {
+  async function refresh(notify = false) {
     try {
       const [mapData, unreachableData, blockData] = await Promise.all([getMap(), getUnreachable(), getBlocks()])
       setMap(mapData)
@@ -24,6 +24,7 @@ export function MapPage() {
         setOrigin(mapData.nodos[0].id)
       }
       setError('')
+      if (notify) setMessage('Mapa actualizado')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'No se pudo cargar el mapa')
     }
@@ -69,10 +70,10 @@ export function MapPage() {
           <h1>Mapa del edificio</h1>
           <p>El grafo real del edificio, con estados y recorridos.</p>
         </div>
-        <button className="button button--ghost" onClick={() => void refresh()}><RefreshCw size={16} /> Actualizar</button>
+        <button className="button button--ghost" onClick={() => void refresh(true)}><RefreshCw size={16} /> Actualizar</button>
       </div>
 
-      {error && <div className="notice notice--warning">{error}</div>}
+      {(error || message) && <div className={`notice ${error ? 'notice--warning' : ''}`}>{error || message}</div>}
 
       <div className="map-workspace">
         <div className="panel map-panel-large">

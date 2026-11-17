@@ -52,13 +52,14 @@ export function ReservationsPage() {
     orden: '',
   })
 
-  async function refresh() {
+  async function refresh(notify = false) {
     try {
       const [reservationsData, apartmentsData] = await Promise.all([getReservations(), getApartments()])
       setItems(reservationsData)
       setApartments(apartmentsData)
       setSelected((current) => current ? reservationsData.find((reservation) => reservation.id === current.id) : undefined)
       setError('')
+      if (notify) setMessage('Reservas actualizadas')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'No se pudieron cargar las reservas')
     }
@@ -188,7 +189,7 @@ export function ReservationsPage() {
           <p>Busca, cotiza y mueve cada estancia sin perder el contexto.</p>
         </div>
         <div className="page-intro__actions">
-          <button className="button button--ghost" onClick={() => void refresh()}><RefreshCw size={16} /> Actualizar</button>
+          <button className="button button--ghost" onClick={() => void refresh(true)}><RefreshCw size={16} /> Actualizar</button>
           <button className="button button--ghost" onClick={() => void runExpirations()}><TriangleAlert size={16} /> Vencimientos</button>
         </div>
       </div>
@@ -257,7 +258,7 @@ export function ReservationsPage() {
           ) : (
             <div className="quick-actions">
               <button onClick={() => void loadScenario()}>Cargar escenario inicial</button>
-              <button onClick={() => void refresh()}>Actualizar reservas</button>
+              <button onClick={() => void refresh(true)}>Actualizar reservas</button>
               <button onClick={() => void runExpirations()}>Procesar vencimientos</button>
             </div>
           )}
