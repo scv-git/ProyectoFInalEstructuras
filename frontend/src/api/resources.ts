@@ -1,5 +1,26 @@
 import { api } from './client'
-import type { Apartment, CalendarRow, Guest, MapData, PreparationItem, Report, Reservation, RouteResult } from '../types/domain'
+import type {
+  Apartment,
+  BlockGroup,
+  CalendarRow,
+  ChannelConflict,
+  Employee,
+  ExternalRequest,
+  ExternalResult,
+  Folio,
+  Guest,
+  MapData,
+  Movement,
+  PreparationItem,
+  Quote,
+  Refund,
+  Report,
+  Reservation,
+  ReservationInput,
+  RouteResult,
+  Screen,
+  SeasonPeriod,
+} from '../types/domain'
 
 export function getApartments(order?: string) {
   const query = order ? `?orden=${encodeURIComponent(order)}` : ''
@@ -30,6 +51,7 @@ export function updateApartmentStatus(code: string, data: unknown) { return api<
 export function getApartmentReservations(code: string) { return api<Reservation[]>(`/apartamentos/${encodeURIComponent(code)}/reservas`) }
 
 export function getGuests() { return api<Guest[]>('/huespedes') }
+export function getGuest(document: string) { return api<Guest>(`/huespedes/${encodeURIComponent(document)}`) }
 export function createGuest(data: unknown) { return api<Guest>('/huespedes', { method: 'POST', body: JSON.stringify(data) }) }
 export function updateGuest(document: string, data: unknown) { return api<Guest>(`/huespedes/${encodeURIComponent(document)}`, { method: 'PUT', body: JSON.stringify(data) }) }
 export function deleteGuest(document: string) { return api<void>(`/huespedes/${encodeURIComponent(document)}`, { method: 'DELETE' }) }
@@ -39,16 +61,30 @@ export function getGuestFavorites(document: string) { return api<string[]>(`/hue
 export function toggleFavorite(document: string, code: string, remove = false) { return api<string[]>(`/huespedes/${encodeURIComponent(document)}/favoritos/${encodeURIComponent(code)}`, { method: remove ? 'DELETE' : 'POST' }) }
 
 export function getReservations() { return api<Reservation[]>('/reservas') }
-export function getAvailability(params: { entrada: string; salida: string; personas: number; orden?: string }) { const query = new URLSearchParams({ entrada: params.entrada, salida: params.salida, personas: String(params.personas), ...(params.orden ? { orden: params.orden } : {}) }); return api<Apartment[]>(`/reservas/disponibilidad?${query}`) }
-export function quoteReservation(data: unknown) { return api<unknown>('/reservas/cotizar', { method: 'POST', body: JSON.stringify(data) }) }
-export function createReservation(data: unknown) { return api<Reservation>('/reservas', { method: 'POST', body: JSON.stringify(data) }) }
-export function reservationAction(id: string, action: 'anticipo' | 'cancelar' | 'checkin' | 'checkout' | 'no-show') { return api<unknown>(`/reservas/${encodeURIComponent(id)}/${action}`, { method: 'POST' }) }
-export function getFolio(id: string) { return api<unknown>(`/reservas/${encodeURIComponent(id)}/folio`) }
-export function folioMovement(id: string, type: 'cargos' | 'pagos', data: unknown) { return api<unknown>(`/reservas/${encodeURIComponent(id)}/folio/${type}`, { method: 'POST', body: JSON.stringify(data) }) }
-export function undoFolio(id: string) { return api<unknown>(`/reservas/${encodeURIComponent(id)}/folio/deshacer`, { method: 'POST' }) }
-export function getExternalReservations() { return api<unknown[]>('/reservas/externas') }
-export function processExternalReservation() { return api<unknown>('/reservas/externas/procesar', { method: 'POST' }) }
-export function getReservationConflicts() { return api<unknown[]>('/reservas/conflictos') }
+export function getAvailability(params: { entrada: string; salida: string; personas: number; orden?: string }) {
+  const query = new URLSearchParams({
+    entrada: params.entrada,
+    salida: params.salida,
+    personas: String(params.personas),
+    ...(params.orden ? { orden: params.orden } : {}),
+  })
+  return api<Apartment[]>(`/reservas/disponibilidad?${query}`)
+}
+export function quoteReservation(data: ReservationInput) { return api<Quote>('/reservas/cotizar', { method: 'POST', body: JSON.stringify(data) }) }
+export function createReservation(data: ReservationInput) { return api<Reservation>('/reservas', { method: 'POST', body: JSON.stringify(data) }) }
+export function reservationAction(id: string, action: 'anticipo' | 'cancelar' | 'checkin' | 'checkout' | 'no-show') { return api<Reservation | Refund>(`/reservas/${encodeURIComponent(id)}/${action}`, { method: 'POST' }) }
+export function getRefund(id: string) { return api<Refund>(`/reservas/${encodeURIComponent(id)}/devolucion`) }
+export function getFolio(id: string) { return api<Folio>(`/reservas/${encodeURIComponent(id)}/folio`) }
+export function folioMovement(id: string, type: 'cargos' | 'pagos', data: { concepto: string; valor: number }) { return api<Movement>(`/reservas/${encodeURIComponent(id)}/folio/${type}`, { method: 'POST', body: JSON.stringify(data) }) }
+export function undoFolio(id: string) { return api<Movement>(`/reservas/${encodeURIComponent(id)}/folio/deshacer`, { method: 'POST' }) }
+export function getGroupAssignment(params: { entrada: string; salida: string; personas: number }) {
+  const query = new URLSearchParams({ entrada: params.entrada, salida: params.salida, personas: String(params.personas) })
+  return api<Apartment[]>(`/reservas/grupo?${query}`)
+}
+export function getExternalReservations() { return api<ExternalRequest[]>('/reservas/externas') }
+export function enqueueExternal(data: ExternalRequest) { return api<{ mensaje: string }>('/reservas/externas', { method: 'POST', body: JSON.stringify(data) }) }
+export function processExternalReservation() { return api<ExternalResult>('/reservas/externas/procesar', { method: 'POST' }) }
+export function getReservationConflicts() { return api<ChannelConflict[]>('/reservas/conflictos') }
 export function processExpirations() { return api<{ mensaje: string }>('/reservas/vencimientos', { method: 'POST' }) }
 
 export function getPreparationQueue() { return api<PreparationItem[]>('/preparacion') }
@@ -60,12 +96,17 @@ export function getMapRoute(origin: string, destination: string) { return api<Ro
 export function setCorridor(origin: string, destination: string, open: boolean) { return api<string[]>(`/mapa/pasillos/${open ? 'abrir' : 'cerrar'}`, { method: 'POST', body: JSON.stringify({ origen: origin, destino: destination }) }) }
 export function getUnreachable() { return api<string[]>('/mapa/inalcanzables') }
 export function traverseMap(type: 'bfs' | 'dfs', origin?: string) { return api<string[]>(`/mapa/${type}${origin ? `?origen=${encodeURIComponent(origin)}` : ''}`) }
+export function getBlocks() { return api<BlockGroup[]>('/mapa/bloques') }
 
-export function getEmployees() { return api<unknown[]>('/empleados') }
-export function createEmployee(data: unknown) { return api<unknown>('/empleados', { method: 'POST', body: JSON.stringify(data) }) }
+export function getEmployees() { return api<Employee[]>('/empleados') }
+export function createEmployee(data: unknown) { return api<Employee>('/empleados', { method: 'POST', body: JSON.stringify(data) }) }
 export function deleteEmployee(document: string) { return api<void>(`/empleados/${encodeURIComponent(document)}`, { method: 'DELETE' }) }
-export function getCurrentShift() { return api<unknown>('/turnos/actual') }
-export function rotateShift() { return api<unknown>('/turnos/rotar', { method: 'POST' }) }
-export function getSeasons() { return api<unknown[]>('/temporadas') }
-export function createSeason(data: unknown) { return api<unknown>('/temporadas', { method: 'POST', body: JSON.stringify(data) }) }
+export function getCurrentShift() { return api<Employee | null>('/turnos/actual') }
+export function rotateShift() { return api<Employee>('/turnos/rotar', { method: 'POST' }) }
+export function getSeasons() { return api<SeasonPeriod[]>('/temporadas') }
+export function createSeason(data: unknown) { return api<SeasonPeriod>('/temporadas', { method: 'POST', body: JSON.stringify(data) }) }
 export function deleteSeason(index: number) { return api<void>(`/temporadas/${index}`, { method: 'DELETE' }) }
+
+export function getCurrentScreen() { return api<Screen>('/navegacion') }
+export function goToScreen(pantalla: string) { return api<Screen>('/navegacion/ir', { method: 'POST', body: JSON.stringify({ pantalla }) }) }
+export function backScreen() { return api<Screen>('/navegacion/atras', { method: 'POST' }) }

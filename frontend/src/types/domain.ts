@@ -5,6 +5,18 @@ export type ApartmentStatus =
   | 'EN_PREPARACION'
   | 'FUERA_DE_SERVICIO'
 
+export type ReservationStatus =
+  | 'PENDIENTE'
+  | 'CONFIRMADA'
+  | 'EN_CURSO'
+  | 'FINALIZADA'
+  | 'CANCELADA'
+  | 'NO_SHOW'
+
+export type Channel = 'PORTAL' | 'DIRECTA' | 'EXTERNA'
+export type Season = 'BAJA' | 'MEDIA' | 'ALTA'
+export type MovementType = 'CARGO' | 'PAGO'
+
 export type Apartment = {
   codigo: string
   nombre: string
@@ -48,6 +60,11 @@ export type MapData = {
   pasillos: MapConnection[]
 }
 
+export type BlockGroup = {
+  bloque: string
+  apartamentos: string[]
+}
+
 export type Report = {
   desde: string
   hasta: string
@@ -70,18 +87,112 @@ export type Guest = {
   foto?: string
 }
 
+export type Occupant = {
+  nombre: string
+  fechaNacimiento: string
+}
+
+export type NightLiquidation = {
+  noche: string
+  temporada: Season
+  tarifaPorPersona: number
+  personasQuePagan: number
+  valor: number
+}
+
+export type Quote = {
+  codigoApartamento: string
+  noches: number
+  personas: number
+  personasQuePagan: number
+  desglose: NightLiquidation[]
+  total: number
+  anticipo: number
+}
+
+export type Refund = {
+  idReserva: string
+  diasParaEntrada: number
+  pagado: number
+  porcentaje: number
+  devolucion: number
+}
+
+export type Movement = {
+  tipo: MovementType
+  concepto: string
+  valor: number
+  fecha: string
+}
+
+export type Folio = {
+  movimientos: Movement[]
+  totalCargos: number
+  totalPagos: number
+  saldo: number
+}
+
 export type Reservation = {
   id: string
   documentoTitular?: string
   codigoApartamento?: string
-  canal?: string
+  canal?: Channel
   entrada?: string
   salida?: string
+  noches?: number
   horaLlegada?: string
-  estado?: string
+  creada?: string
+  vence?: string
+  estado?: ReservationStatus
+  total?: number
+  anticipo?: number
   saldo?: number
-  folio?: unknown
-  ocupantes?: Array<{ nombre: string; fechaNacimiento?: string }>
+  desglose?: NightLiquidation[]
+  ocupantes?: Occupant[]
+  folio?: Folio
+}
+
+export type ReservationInput = {
+  documentoTitular: string
+  codigoApartamento: string
+  canal: Channel
+  entrada: string
+  salida: string
+  horaLlegada: string
+  ocupantes: Occupant[]
+}
+
+export type ExternalRequest = {
+  documentoTitular: string
+  codigoApartamento: string
+  entrada: string
+  salida: string
+  horaLlegada: string
+  ocupantes: Occupant[]
+}
+
+export type ExternalResult = {
+  resultado: 'ACEPTADA' | 'CONFLICTO' | 'RECHAZADA'
+  detalle: string
+  reserva?: Reservation
+}
+
+export type ChannelConflict = {
+  solicitud: ExternalRequest
+  motivo: string
+  fecha: string
+}
+
+export type Employee = {
+  documento: string
+  nombre: string
+  rol: 'RECEPCIONISTA' | 'PREPARACION' | 'ADMINISTRADOR'
+}
+
+export type SeasonPeriod = {
+  temporada: Season
+  inicio: string
+  fin: string
 }
 
 export type PreparationItem = {
@@ -92,3 +203,5 @@ export type PreparationItem = {
 }
 
 export type RouteResult = { camino: string[]; distancia: number }
+
+export type Screen = { pantalla: string }

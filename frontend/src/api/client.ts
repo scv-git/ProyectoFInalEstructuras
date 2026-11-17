@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
+const isFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:'
+const API_BASE = import.meta.env.VITE_API_URL ?? (isFileProtocol ? 'http://localhost:8080/api' : '/api')
 
 export async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {

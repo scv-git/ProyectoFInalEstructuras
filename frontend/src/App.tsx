@@ -12,6 +12,21 @@ import { MapPage } from './pages/MapPage'
 import { StatsPage } from './pages/StatsPage'
 import { AdminPage } from './pages/AdminPage'
 import { GuestPage } from './pages/GuestPage'
+import { backScreen, goToScreen } from './api/resources'
+
+const screenByView: Record<ViewKey, string> = {
+  inicio: 'INICIO',
+  apartamentos: 'APARTAMENTOS',
+  reservas: 'RESERVAS',
+  calendario: 'CALENDARIO',
+  huespedes: 'HUESPEDES',
+  preparacion: 'PREPARACION',
+  mapa: 'MAPA',
+  estadisticas: 'ESTADISTICAS',
+  administracion: 'ADMINISTRACION',
+}
+
+const viewByScreen = Object.fromEntries(Object.entries(screenByView).map(([view, screen]) => [screen, view])) as Record<string, ViewKey>
 
 export default function App() {
   const [user, setUser] = useState<SessionUser | null>(() => {
@@ -19,10 +34,24 @@ export default function App() {
     return saved ? JSON.parse(saved) as SessionUser : null
   })
   const [view, setView] = useState<ViewKey>('inicio')
-  if (!user) return <LoginPage onLogin={(nextUser) => { sessionStorage.setItem('sga-session', JSON.stringify(nextUser)); setUser(nextUser) }} />
+  function navigate(next: ViewKey) {
+    if (next === view) return
+    setView(next)
+    goToScreen(screenByView[next]).catch(() => undefined)
+  }
+  async function goBack() {
+    try {
+      const previous = await backScreen()
+      const target = viewByScreen[previous.pantalla]
+      setView(target ?? 'inicio')
+    } catch {
+      setView('inicio')
+    }
+  }
+  if (!user) return <LoginPage onLogin={(nextUser) => { sessionStorage.setItem('sga-session', JSON.stringify(nextUser)); setUser(nextUser); goToScreen('INICIO').catch(() => undefined) }} />
   function logout() { sessionStorage.removeItem('sga-session'); setUser(null); setView('inicio') }
   const content = {
-    inicio: <OverviewPage onNavigate={setView} role={user.role} />,
+    inicio: <OverviewPage onNavigate={navigate} role={user.role} />,
     apartamentos: <ApartmentsPage />,
     reservas: user.role === 'HUESPED' ? <GuestPage user={user} /> : <ReservationsPage />,
     calendario: <CalendarPage />,
@@ -32,5 +61,5 @@ export default function App() {
     estadisticas: <StatsPage />,
     administracion: <AdminPage />,
   }[view]
-  return <AppLayout activeView={view} user={user} onNavigate={setView} onLogout={logout}>{content}</AppLayout>
+  return <AppLayout activeView={view} user={user} onNavigate={navigate} onBack={goBack} onLogout={logout}>{content}</AppLayout>
 }

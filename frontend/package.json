@@ -2,23 +2,63 @@
   "name": "proyecto-final-estructura-frontend",
   "private": true,
   "version": "0.1.0",
+  "description": "Panel de operaciones de Aparta-Suites UQ",
+  "author": {
+    "name": "Universidad del Quindío",
+    "email": "scv-git@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/scv-git/ProyectoFInalEstructuras",
+  "license": "MIT",
   "type": "module",
+  "main": "electron/main.cjs",
+  "desktopName": "aparta-suites-uq",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron:dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron . --dev\"",
+    "electron:start": "npm run build && electron .",
+    "electron:build": "npm run build && electron-builder",
+    "electron:build:deb": "npm run build && electron-builder --linux deb"
   },
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "latest",
+    "concurrently": "^10.0.7",
+    "electron": "^45.3.3",
+    "electron-builder": "^26.18.0",
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
     "recharts": "latest",
     "typescript": "latest",
-    "vite": "latest"
+    "vite": "latest",
+    "wait-on": "^9.5.1"
   },
-  "devDependencies": {
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0"
+  "build": {
+    "appId": "co.edu.uniquindio.apartasuites",
+    "productName": "Aparta-Suites UQ",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Office",
+      "syncDesktopName": true
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    }
   }
 }
