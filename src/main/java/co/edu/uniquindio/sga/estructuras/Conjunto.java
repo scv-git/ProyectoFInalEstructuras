@@ -2,9 +2,8 @@ package co.edu.uniquindio.sga.estructuras;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
+
 
 /**
  * Conjunto genérico, no admite elementos repetidos.

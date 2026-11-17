@@ -3,10 +3,8 @@ package co.edu.uniquindio.sga.estructuras;
 import co.edu.uniquindio.sga.excepciones.EstructuraVaciaException;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 
