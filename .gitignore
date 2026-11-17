@@ -1,0 +1,20 @@
+# Backend
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Frontend
+node_modules/
+frontend/dist/
+frontend/release/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# Sistema
+.DS_Store
+Thumbs.db
+
