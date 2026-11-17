@@ -53,7 +53,6 @@ public class BaseDatos {
         return String.format("R-%04d", consecutivoReservas);
     }
 
-    // Búsquedas que lanzan error si no existe
 
     public Apartamento apartamento(String codigo) {
         Apartamento apartamento = apartamentos.buscar(new Apartamento(codigo));
