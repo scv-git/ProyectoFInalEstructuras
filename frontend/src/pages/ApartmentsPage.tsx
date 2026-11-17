@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Plus, RefreshCw, Search, Trash2, Wrench } from 'lucide-react'
-import { createApartment, deleteApartment, getApartments, updateApartmentStatus } from '../api/resources'
+import { Pencil, Plus, RefreshCw, Search, Trash2, Wrench } from 'lucide-react'
+import { createApartment, deleteApartment, getApartments, updateApartment, updateApartmentStatus } from '../api/resources'
 import type { Apartment, ApartmentStatus } from '../types/domain'
 import { StatusPill } from '../components/StatusPill'
+import { formatMoney } from '../utils/format'
 
 export function ApartmentsPage() {
   const [items, setItems] = useState<Apartment[]>([])
@@ -17,9 +18,14 @@ export function ApartmentsPage() {
   const [newFloor, setNewFloor] = useState('1')
   const [newRooms, setNewRooms] = useState('1')
   const [newCap, setNewCap] = useState('2')
+  const [newBaja, setNewBaja] = useState('0')
+  const [newMedia, setNewMedia] = useState('0')
+  const [newAlta, setNewAlta] = useState('0')
   const [showMotivo, setShowMotivo] = useState(false)
   const [motivoCode, setMotivoCode] = useState('')
   const [motivoText, setMotivoText] = useState('')
+  const [editCode, setEditCode] = useState<string | null>(null)
+  const [edit, setEdit] = useState({ nombre: '', bloque: 'A', piso: '1', dormitorios: '1', capacidad: '2', caracteristicas: '', baja: '0', media: '0', alta: '0' })
 
   async function refresh(notify = false) {
     try {
@@ -69,9 +75,9 @@ export function ApartmentsPage() {
         dormitorios: Number(newRooms) || 1,
         capacidad: Number(newCap) || 2,
         caracteristicas: '',
-        tarifaBaja: 0,
-        tarifaMedia: 0,
-        tarifaAlta: 0,
+        tarifaBaja: Number(newBaja) || 0,
+        tarifaMedia: Number(newMedia) || 0,
+        tarifaAlta: Number(newAlta) || 0,
       })
       setShowAdd(false)
       setNewCode('')
@@ -80,10 +86,52 @@ export function ApartmentsPage() {
       setNewFloor('1')
       setNewRooms('1')
       setNewCap('2')
+      setNewBaja('0')
+      setNewMedia('0')
+      setNewAlta('0')
       await refresh()
       setMessage('Apartamento creado')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo crear')
+    }
+  }
+
+  function openEdit(apartment: Apartment) {
+    setEditCode(apartment.codigo)
+    setEdit({
+      nombre: apartment.nombre,
+      bloque: apartment.bloque,
+      piso: String(apartment.piso),
+      dormitorios: String(apartment.dormitorios),
+      capacidad: String(apartment.capacidad),
+      caracteristicas: apartment.caracteristicas ?? '',
+      baja: String(apartment.tarifaBaja ?? 0),
+      media: String(apartment.tarifaMedia ?? 0),
+      alta: String(apartment.tarifaAlta ?? 0),
+    })
+  }
+
+  async function saveEdit() {
+    if (!editCode || !edit.nombre.trim()) return setError('El nombre es obligatorio.')
+    try {
+      await updateApartment(editCode, {
+        codigo: editCode,
+        nombre: edit.nombre.trim(),
+        bloque: edit.bloque,
+        piso: Number(edit.piso) || 1,
+        dormitorios: Number(edit.dormitorios) || 1,
+        capacidad: Number(edit.capacidad) || 1,
+        caracteristicas: edit.caracteristicas,
+        tarifaBaja: Number(edit.baja) || 0,
+        tarifaMedia: Number(edit.media) || 0,
+        tarifaAlta: Number(edit.alta) || 0,
+      })
+      setEditCode(null)
+      await refresh()
+      setError('')
+      setMessage('Apartamento actualizado')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo actualizar')
     }
   }
 
@@ -129,6 +177,7 @@ export function ApartmentsPage() {
               <th>Apartamento</th>
               <th>Ubicación</th>
               <th>Capacidad</th>
+              <th>Tarifas (B/M/A)</th>
               <th>Estado y motivo</th>
               <th>Acciones</th>
             </tr>
@@ -143,6 +192,11 @@ export function ApartmentsPage() {
                 <td>Bloque {a.bloque}, piso {a.piso}</td>
                 <td>{a.dormitorios} hab. · {a.capacidad} personas</td>
                 <td>
+                  <span>Baja: {formatMoney(a.tarifaBaja ?? 0)}</span>
+                  <span>Media: {formatMoney(a.tarifaMedia ?? 0)}</span>
+                  <span>Alta: {formatMoney(a.tarifaAlta ?? 0)}</span>
+                </td>
+                <td>
                   <StatusPill status={a.estado} />
                   {a.estado === 'FUERA_DE_SERVICIO' && a.motivoFueraServicio && (
                     <small className="table-reason">Motivo: {a.motivoFueraServicio}</small>
@@ -150,6 +204,9 @@ export function ApartmentsPage() {
                 </td>
                 <td>
                   <div className="row-actions">
+                    <button title="Editar apartamento" onClick={() => openEdit(a)}>
+                      <Pencil size={15} />
+                    </button>
                     <button title="Marcar fuera de servicio" onClick={() => void handleOutOfService(a.codigo)}>
                       <Wrench size={15} />
                     </button>
@@ -162,7 +219,7 @@ export function ApartmentsPage() {
             ))}
             {!visible.length && (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={6}>
                   <div className="empty-state">No hay apartamentos para mostrar.</div>
                 </td>
               </tr>
@@ -190,9 +247,48 @@ export function ApartmentsPage() {
             <input className="form-input" type="number" value={newRooms} onChange={(e) => setNewRooms(e.target.value)} placeholder="1" />
             <label className="form-label">Capacidad (personas)</label>
             <input className="form-input" type="number" value={newCap} onChange={(e) => setNewCap(e.target.value)} placeholder="2" />
+            <label className="form-label">Tarifa temporada baja</label>
+            <input className="form-input" type="number" min="0" value={newBaja} onChange={(e) => setNewBaja(e.target.value)} placeholder="0" />
+            <label className="form-label">Tarifa temporada media</label>
+            <input className="form-input" type="number" min="0" value={newMedia} onChange={(e) => setNewMedia(e.target.value)} placeholder="0" />
+            <label className="form-label">Tarifa temporada alta</label>
+            <input className="form-input" type="number" min="0" value={newAlta} onChange={(e) => setNewAlta(e.target.value)} placeholder="0" />
             <div className="form-actions">
               <button className="button button--ghost" onClick={() => setShowAdd(false)}>Cancelar</button>
               <button className="button button--primary" onClick={() => void handleCreateApartment()}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editCode && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-head">
+              <h3>Editar apartamento: {editCode}</h3>
+              <button className="modal-close" onClick={() => setEditCode(null)}>Cerrar</button>
+            </div>
+            <label className="form-label">Nombre</label>
+            <input className="form-input" value={edit.nombre} onChange={(e) => setEdit({ ...edit, nombre: e.target.value })} />
+            <label className="form-label">Bloque</label>
+            <input className="form-input" value={edit.bloque} onChange={(e) => setEdit({ ...edit, bloque: e.target.value })} />
+            <label className="form-label">Piso</label>
+            <input className="form-input" type="number" value={edit.piso} onChange={(e) => setEdit({ ...edit, piso: e.target.value })} />
+            <label className="form-label">Dormitorios</label>
+            <input className="form-input" type="number" value={edit.dormitorios} onChange={(e) => setEdit({ ...edit, dormitorios: e.target.value })} />
+            <label className="form-label">Capacidad (personas)</label>
+            <input className="form-input" type="number" value={edit.capacidad} onChange={(e) => setEdit({ ...edit, capacidad: e.target.value })} />
+            <label className="form-label">Características</label>
+            <input className="form-input" value={edit.caracteristicas} onChange={(e) => setEdit({ ...edit, caracteristicas: e.target.value })} />
+            <label className="form-label">Tarifa temporada baja</label>
+            <input className="form-input" type="number" min="0" value={edit.baja} onChange={(e) => setEdit({ ...edit, baja: e.target.value })} />
+            <label className="form-label">Tarifa temporada media</label>
+            <input className="form-input" type="number" min="0" value={edit.media} onChange={(e) => setEdit({ ...edit, media: e.target.value })} />
+            <label className="form-label">Tarifa temporada alta</label>
+            <input className="form-input" type="number" min="0" value={edit.alta} onChange={(e) => setEdit({ ...edit, alta: e.target.value })} />
+            <div className="form-actions">
+              <button className="button button--ghost" onClick={() => setEditCode(null)}>Cancelar</button>
+              <button className="button button--primary" onClick={() => void saveEdit()}>Guardar</button>
             </div>
           </div>
         </div>

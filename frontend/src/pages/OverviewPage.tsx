@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, BedDouble, Building2, Database, LoaderCircle, RefreshCw, TriangleAlert } from 'lucide-react'
-import { getApartments, getMap, loadScenario } from '../api/resources'
-import type { Apartment, MapData } from '../types/domain'
+import { ArrowRight, BedDouble, Building2, Database, LoaderCircle, RefreshCw, TriangleAlert, UserCheck } from 'lucide-react'
+import { getApartments, getCurrentShift, getMap, loadScenario } from '../api/resources'
+import type { Apartment, Employee, MapData } from '../types/domain'
 import { ApartmentCard } from '../components/ApartmentCard'
 import { MapPreview } from '../components/MapPreview'
 import type { ViewKey } from '../layouts/AppLayout'
@@ -10,6 +10,7 @@ import type { Role } from '../auth/users'
 export function OverviewPage({ onNavigate, role }: { onNavigate: (view: ViewKey) => void; role: Role }) {
   const [apartments, setApartments] = useState<Apartment[]>([])
   const [map, setMap] = useState<MapData>()
+  const [shift, setShift] = useState<Employee | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadingScenario, setLoadingScenario] = useState(false)
   const [error, setError] = useState(''); const [message, setMessage] = useState('')
@@ -18,9 +19,14 @@ export function OverviewPage({ onNavigate, role }: { onNavigate: (view: ViewKey)
   async function loadData(notify = false) {
     setLoading(true); setError('')
     try {
-      const [apartmentsData, mapData] = await Promise.all([getApartments(), isGuest ? Promise.resolve(undefined) : getMap()])
+      const [apartmentsData, mapData, shiftData] = await Promise.all([
+        getApartments(),
+        isGuest ? Promise.resolve(undefined) : getMap(),
+        isGuest ? Promise.resolve(null) : getCurrentShift(),
+      ])
       setApartments(apartmentsData)
       setMap(mapData)
+      setShift(shiftData ?? null)
       if (notify) setMessage('Datos actualizados')
     }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'No se pudo conectar con la API.') }
@@ -50,7 +56,13 @@ export function OverviewPage({ onNavigate, role }: { onNavigate: (view: ViewKey)
     <section className="page-intro"><div><span className="eyebrow">{eyebrow}</span><h1>{isGuest ? <>Tu próxima <em>estancia.</em></> : <>El edificio, <em>en movimiento.</em></>}</h1><p>{isGuest ? 'Apartamentos listos para recibirte en Aparta-Suites UQ.' : 'Una vista clara de lo que está pasando en Aparta-Suites UQ.'}</p></div><div className="page-intro__actions">          <button className="button button--ghost" onClick={() => void loadData(true)}><RefreshCw size={16} /> Actualizar</button>{!isGuest && <button className="button button--primary button--compact" onClick={() => void handleLoadScenario()} disabled={loadingScenario}>{loadingScenario ? <LoaderCircle className="spin" size={16} /> : <Database size={16} />} {loadingScenario ? 'Cargando...' : 'Cargar escenario'}</button>}</div></section>
     {error && <div className="notice notice--warning"><TriangleAlert size={18} /><div><strong>No hay datos cargados</strong><span>{error} Verifica que Spring Boot esté ejecutándose en el puerto 8080 y carga el escenario inicial.</span></div></div>}
     {message && <div className="notice">{message}</div>}
-    {message && <div className="notice">{message}</div>}
+    {!isGuest && (
+      <div className="shift-panel">
+        <UserCheck size={19} />
+        <div><span className="section-kicker">Turno actual</span><strong>{shift ? shift.nombre : 'Sin turno cargado'}</strong></div>
+        {shift && <small>{shift.documento} · {shift.rol}</small>}
+      </div>
+    )}
     <section className="metric-row metric-row--guest">
       <div className="metric-card metric-card--dark"><div className="metric-icon"><Building2 size={19} /></div><span>Total de apartamentos</span><strong>{loading ? '—' : apartments.length || 0}</strong><small>en el inventario</small></div>
       <div className="metric-card"><div className="metric-card__label"><span className="signal signal--green" /> Listos para recibir</div><strong>{counts.PREPARADO ?? 0}</strong><small>apartamentos preparados</small></div>

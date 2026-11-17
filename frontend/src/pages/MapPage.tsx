@@ -20,9 +20,7 @@ export function MapPage() {
       setMap(mapData)
       setUnreachable(unreachableData)
       setBlocks(blockData)
-      if (mapData.nodos.length && !mapData.nodos.some((node) => node.id === origin)) {
-        setOrigin(mapData.nodos[0].id)
-      }
+      setOrigin((current) => mapData.nodos.length && !mapData.nodos.some((node) => node.id === current) ? mapData.nodos[0].id : current)
       setError('')
       if (notify) setMessage('Mapa actualizado')
     } catch (cause) {
@@ -30,7 +28,11 @@ export function MapPage() {
     }
   }
 
-  useEffect(() => { void refresh() }, [])
+  useEffect(() => {
+    void refresh()
+    const timer = setInterval(() => { void refresh() }, 5000)
+    return () => clearInterval(timer)
+  }, [])
 
   async function calculate() {
     if (!destination) return

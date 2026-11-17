@@ -71,6 +71,21 @@ export function ReservationsPage() {
     return apartments.find((apartment) => apartment.codigo === codigo)?.estado
   }
 
+  function puedeCheckIn(reservation: Reservation) {
+    if (estadoApartamento(reservation.codigoApartamento) !== 'PREPARADO') return false
+    if (!reservation.entrada || !reservation.salida) return false
+    const today = todayPlus(0)
+    return today >= reservation.entrada && today < reservation.salida
+  }
+
+  function checkInMotivo(reservation: Reservation) {
+    if (estadoApartamento(reservation.codigoApartamento) !== 'PREPARADO') return 'El apartamento no está preparado'
+    if (!reservation.entrada) return 'La reserva no tiene fecha de entrada'
+    if (todayPlus(0) < reservation.entrada) return `Disponible a partir del ${reservation.entrada}`
+    if (todayPlus(0) >= (reservation.salida ?? '')) return 'La reserva ya finalizó'
+    return 'Check-in'
+  }
+
   async function search() {
     try {
       setAvailability(await getAvailability({
@@ -288,9 +303,9 @@ export function ReservationsPage() {
                     )}
                     {reservation.estado === 'CONFIRMADA' && (
                       <button
-                        title={estadoApartamento(reservation.codigoApartamento) === 'PREPARADO' ? 'Check-in' : 'El apartamento no está preparado'}
+                        title={checkInMotivo(reservation)}
                         onClick={() => void act(reservation.id, 'checkin')}
-                        disabled={estadoApartamento(reservation.codigoApartamento) !== 'PREPARADO'}
+                        disabled={!puedeCheckIn(reservation)}
                       ><LogIn size={15} /></button>
                     )}
                     {reservation.estado === 'CONFIRMADA' && (

@@ -76,6 +76,22 @@ export type Report = {
     nochesOcupadas: number
     porcentaje: number
   }>
+  ocupacionPorTemporada: Array<{
+    temporada: Season
+    nochesVendidas: number
+    valorLiquidado: number
+  }>
+  reservasPorCanal: Array<{
+    canal: Channel
+    total: number
+    pendientes: number
+    confirmadas: number
+    enCurso: number
+    finalizadas: number
+    canceladas: number
+    noShow: number
+  }>
+  conflictos: ChannelConflict[]
 }
 
 export type Guest = {

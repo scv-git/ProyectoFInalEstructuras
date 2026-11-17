@@ -195,12 +195,21 @@ public class ReservaServicio {
         if (devolucion > 0) folio.registrarSistema(TipoMovimiento.PAGO, "Devolución al huésped", -devolucion);
     }
 
-    /** Solo si el apartamento está Preparado. */
+    /** Solo si el apartamento está Preparado y ya llegó la fecha de entrada. */
     public Reserva checkIn(String id) {
         Reserva r = db.reserva(id);
         Apartamento a = db.apartamento(r.getCodigoApartamento());
         if (a.getEstado() != EstadoApartamento.PREPARADO) {
             throw new TransicionInvalidaException("El apartamento " + a.getCodigo() + " no está Preparado, está " + a.getEstado());
+        }
+        LocalDate hoy = LocalDate.now();
+        if (hoy.isBefore(r.getEntrada())) {
+            throw new TransicionInvalidaException("La reserva inicia el " + r.getEntrada()
+                    + "; no se puede hacer check-in antes de esa fecha");
+        }
+        if (!hoy.isBefore(r.getSalida())) {
+            throw new TransicionInvalidaException("La reserva terminó el " + r.getSalida()
+                    + "; ya no se puede hacer check-in");
         }
         r.cambiarEstado(EstadoReserva.EN_CURSO);
         a.cambiarEstado(EstadoApartamento.OCUPADO, null);

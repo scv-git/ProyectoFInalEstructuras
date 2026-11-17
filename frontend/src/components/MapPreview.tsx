@@ -53,7 +53,7 @@ export function MapPreview({ data, route, onCorridorClick }: { data?: MapData; r
           </g>
         ))}
       </svg>
-      <div className="map-legend"><StatusPill status="PREPARADO" /><StatusPill status="OCUPADO" /><StatusPill status="PENDIENTE_PREPARACION" /></div>
+      <div className="map-legend"><StatusPill status="PREPARADO" /><StatusPill status="OCUPADO" /><StatusPill status="PENDIENTE_PREPARACION" /><StatusPill status="EN_PREPARACION" /><StatusPill status="FUERA_DE_SERVICIO" /></div>
     </div>
   )
 }
