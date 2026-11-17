@@ -1,6 +1,7 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { BarChart3, ArrowLeft, Building2, CalendarDays, ClipboardList, Home, Map, Menu, PanelLeftClose, Settings2, Sparkles, UsersRound, X } from 'lucide-react'
 import { roleLabels, type Role, type SessionUser } from '../auth/users'
+import { getPreparationQueue } from '../api/resources'
 
 export type ViewKey = 'inicio' | 'apartamentos' | 'reservas' | 'calendario' | 'huespedes' | 'preparacion' | 'mapa' | 'estadisticas' | 'administracion'
 
@@ -24,8 +25,21 @@ const access: Record<Role, ViewKey[]> = {
 
 export function AppLayout({ activeView, user, onNavigate, onBack, onLogout, children }: { activeView: ViewKey; user: SessionUser; onNavigate: (view: ViewKey) => void; onBack: () => void; onLogout: () => void; children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [prepCount, setPrepCount] = useState(0)
   const visibleNavigation = navigation.filter((item) => access[user.role].includes(item.key))
   const currentLabel = visibleNavigation.find((item) => item.key === activeView)?.label
+
+  useEffect(() => {
+    const load = () => getPreparationQueue().then((items) => setPrepCount(Array.isArray(items) ? items.length : 0)).catch(() => setPrepCount(0))
+    let timer: ReturnType<typeof setInterval> | undefined
+    if (activeView === 'preparacion') {
+      load()
+      timer = setInterval(load, 3000)
+    } else {
+      setPrepCount(0)
+    }
+    return () => { if (timer) clearInterval(timer) }
+  }, [activeView])
 
   return (
     <div className="app-shell">
@@ -33,7 +47,7 @@ export function AppLayout({ activeView, user, onNavigate, onBack, onLogout, chil
         <div className="brand"><div className="brand-mark">AU</div><div><strong>Aparta-Suites UQ</strong><span>operaciones</span></div><button className="mobile-close" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú"><X size={20} /></button></div>
         <nav aria-label="Navegación principal">
           <span className="nav-heading">Espacios de trabajo</span>
-          {visibleNavigation.map(({ key, label, icon: Icon }) => <button key={key} className={`nav-item ${activeView === key ? 'nav-item--active' : ''}`} onClick={() => { onNavigate(key); setMobileOpen(false) }}><Icon size={18} /><span>{label}</span>{key === 'preparacion' && <b>4</b>}</button>)}
+          {visibleNavigation.map(({ key, label, icon: Icon }) => <button key={key} className={`nav-item ${activeView === key ? 'nav-item--active' : ''}`} onClick={() => { onNavigate(key); setMobileOpen(false) }}><Icon size={18} /><span>{label}</span>{key === 'preparacion' && prepCount > 0 && <b>{prepCount}</b>}</button>)}
         </nav>
         <div className="sidebar-footer"><div className="connection-dot"><span /> API · puerto 8080</div><div className="session-user"><strong>{user.nombre}</strong><span>{roleLabels[user.role]}</span></div><button className="collapse-button" onClick={onLogout}><PanelLeftClose size={17} /> Cerrar sesión</button></div>
       </aside>
